@@ -1,28 +1,47 @@
-const express = require("express");
-const gerarRBXLX = require("./gerador");
+const fs = require("fs");
+const path = require("path");
 
-const app = express();
+module.exports = async function gerarRBXLX(placeId) {
+    if (!/^\d+$/.test(String(placeId))) {
+        throw new Error("Invalid placeId");
+    }
 
-app.use(express.json());
+    const outputPath = path.join(__dirname, "game.rbxlx");
 
-// LIBERA FRONTEND (IMPORTANTE)
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "*");
-    next();
-});
+    const xml = `<?xml version="1.0" encoding="utf-8"?>
+<roblox version="4">
+    <Meta name="PlaceId">${placeId}</Meta>
 
-app.post("/gerar", async (req, res) => {
-    const { placeId } = req.body;
+    <External>null</External>
 
-    await gerarRBXLX(placeId);
+    <Item class="Workspace" referent="RBX0">
+        <Properties>
+            <string name="Name">Workspace</string>
+        </Properties>
+    </Item>
 
-    res.download("game.rbxlx");
-});
+    <Item class="ServerScriptService" referent="RBX1">
+        <Properties>
+            <string name="Name">ServerScriptService</string>
+        </Properties>
+    </Item>
 
-app.listen(process.env.PORT || 3000, () => {
-    console.log("🚀 Server rodando");
-    app.get("/", (req, res) => {
-    res.send("🔥 Roblox Uncopylocked API ONLINE");
-});
+    <Item class="ReplicatedStorage" referent="RBX2">
+        <Properties>
+            <string name="Name">ReplicatedStorage</string>
+        </Properties>
+    </Item>
 
+    <Item class="StarterGui" referent="RBX3">
+        <Properties>
+            <string name="Name">StarterGui</string>
+        </Properties>
+    </Item>
+</roblox>`;
+
+    await fs.promises.writeFile(outputPath, xml, "utf8");
+
+    console.log(`Generated game.rbxlx for place ${placeId}`);
+
+    return outputPath;
+};
