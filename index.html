@@ -1,0 +1,30 @@
+<script>
+async function enviar() {
+    let link = document.getElementById("link").value;
+
+    let match = link.match(/games\/(\d+)/);
+
+    if (!match) {
+        alert("Link inválido");
+        return;
+    }
+
+    let placeId = match[1];
+
+    const res = await fetch("https://SEU-APP.onrender.com/gerar", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ placeId })
+    });
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "game.rbxlx";
+    a.click();
+}
+</script>
