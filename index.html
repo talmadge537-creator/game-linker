@@ -3,68 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox Game Linker</title>
+    <title>Roblox Place Exporter</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 80px auto;
+            padding: 20px;
+        }
+
+        input {
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-top: 15px;
+        }
+    </style>
 </head>
 
 <body>
 
-    <h2>Roblox Game Linker</h2>
+    <h2>Roblox Place Exporter</h2>
+
+    <p>
+        Export your place from Roblox Studio as an .rbxlx or .rbxl file,
+        then select it below.
+    </p>
 
     <input
-        id="link"
-        type="text"
-        placeholder="https://www.roblox.com/games/4623386862/Piggy"
+        id="placeFile"
+        type="file"
+        accept=".rbxlx,.rbxl"
     >
 
-    <button onclick="enviar()">Generate</button>
+    <br>
+
+    <button id="uploadButton">
+        Upload Place
+    </button>
+
+    <p id="status"></p>
 
     <script>
-        async function enviar() {
-            const link = document.getElementById("link").value.trim();
+        const SERVER =
+            "https://game-linker-a90z.onrender.com";
 
-            const match = link.match(/games\/(\d+)/);
+        const fileInput = document.getElementById("placeFile");
+        const button = document.getElementById("uploadButton");
+        const status = document.getElementById("status");
 
-            if (!match) {
-                alert("Invalid Roblox game link");
+        button.addEventListener("click", async () => {
+            const file = fileInput.files[0];
+
+            if (!file) {
+                status.textContent = "Select an .rbxlx or .rbxl file first.";
                 return;
             }
 
-            const placeId = match[1];
+            const formData = new FormData();
+            formData.append("place", file);
+
+            button.disabled = true;
+            status.textContent = "Uploading...";
 
             try {
-                const res = await fetch(
-                    "https://game-linker-a90z.onrender.com/gerar",
+                const response = await fetch(
+                    SERVER + "/upload",
                     {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ placeId })
+                        body: formData
                     }
                 );
 
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Upload failed.");
                 }
 
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
+                status.textContent =
+                    "Upload complete! Downloading your place...";
 
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "game.rbxlx";
-
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-
-                URL.revokeObjectURL(url);
+                window.location.href = SERVER + "/download";
 
             } catch (error) {
                 console.error(error);
-                alert("Error connecting to the server.");
+                status.textContent =
+                    "Error: " + error.message;
+            } finally {
+                button.disabled = false;
             }
-        }
+        });
     </script>
 
 </body>
