@@ -1,30 +1,46 @@
-<script>
-async function enviar() {
-    let link = document.getElementById("link").value;
+const express = require("express");
+const gerarRBXLX = require("./gerador");
 
-    let match = link.match(/games\/(\d+)/);
+const app = express();
 
-    if (!match) {
-        alert("Link inválido");
-        return;
+app.use(express.json());
+
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept"
+    );
+    next();
+});
+
+app.get("/", (req, res) => {
+    res.send("🚀 Servidor RBXLX online!");
+});
+
+app.post("/gerar", async (req, res) => {
+    try {
+        const { placeId } = req.body;
+
+        if (!placeId) {
+            return res.status(400).json({
+                error: "placeId não informado"
+            });
+        }
+
+        await gerarRBXLX(placeId);
+
+        res.download("game.rbxlx", "game.rbxlx");
+    } catch (error) {
+        console.error("Erro:", error);
+
+        res.status(500).json({
+            error: "Erro ao gerar o arquivo",
+            details: error.message
+        });
     }
+});
 
-    let placeId = match[1];
-
-const res = await fetch("https://game-linker-a90z.onrender.com/gerar", {
-    method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ placeId })
-    });
-
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "game.rbxlx";
-    a.click();
-}
-</script>
+app.listen(process.env.PORT || 3000, () => {
+    console.log("🚀 Server rodando");
+});
